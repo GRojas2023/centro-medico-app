@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchCurrentUser } from './api';
+import { auth } from './firebase';
+import { onIdTokenChanged } from 'firebase/auth';
 import AuthModal from './components/AuthModal';
 import Feed from './components/Feed';
 import PharmacyList from './components/PharmacyList';
@@ -23,6 +25,18 @@ export default function App() {
     setInitialSearch(term);
     setIsAuthOpen(true);
   };
+
+  useEffect(() => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      if (user) {
+        const t = await user.getIdToken();
+        setToken(t);
+      } else {
+        setToken(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (token) {

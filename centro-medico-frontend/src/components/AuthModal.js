@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { registerUser } from '../api';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { auth, googleProvider } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect } from 'firebase/auth';
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
 
@@ -67,19 +67,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         setLoading(true);
         setError('');
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const token = await result.user.getIdToken();
-            localStorage.setItem('token', token);
-
-            // Optionally, we could call an endpoint here to ensure the user exists in our DB.
-            // Currently, we'll let the backend create the user profile from the token if it doesn't exist when they first request something.
-            // Or we can explicitly call a 'sync' endpoint. For simplicity, we just pass the token.
-
-            onLoginSuccess(token);
-            onClose();
+            await signInWithRedirect(auth, googleProvider);
         } catch (err) {
             setError(err.message);
-        } finally {
             setLoading(false);
         }
     };
