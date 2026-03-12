@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { registerUser } from '../api';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { auth, googleProvider } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
 
@@ -67,8 +67,17 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         setLoading(true);
         setError('');
         try {
-            await signInWithRedirect(auth, googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
+            const token = await result.user.getIdToken();
+            localStorage.setItem('token', token);
+            onLoginSuccess(token);
+            onClose();
         } catch (err) {
+            // Si el usuario cierra el popup, no mostrar error
+            if (err.code === 'auth/popup-closed-by-user') {
+                setLoading(false);
+                return;
+            }
             setError(err.message);
             setLoading(false);
         }
@@ -101,6 +110,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
                         <input
+                            id="auth-email"
+                            name="email"
                             type="email"
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -114,6 +125,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                         <div className="relative">
                             <input
+                                id="auth-password"
+                                name="password"
                                 type={showPassword ? 'text' : 'password'}
                                 required
                                 minLength={6}

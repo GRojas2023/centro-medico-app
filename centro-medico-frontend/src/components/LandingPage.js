@@ -101,6 +101,8 @@ export default function LandingPage({ onLoginClick, onSearch }) {
                             <div className="lp__search-field">
                                 <span className="material-symbols-outlined notranslate" translate="no">search</span>
                                 <input
+                                    id="search-specialty-input"
+                                    name="search-specialty"
                                     type="text"
                                     placeholder="Especialidad, médico o clínica..."
                                     value={searchTerm}
@@ -111,6 +113,8 @@ export default function LandingPage({ onLoginClick, onSearch }) {
                             <div className="lp__search-field">
                                 <span className="material-symbols-outlined notranslate" translate="no">location_on</span>
                                 <input
+                                    id="search-location-input"
+                                    name="search-location"
                                     type="text"
                                     placeholder="Ciudad o código postal"
                                     value={locationTerm}

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+sqlmodel
+alembic
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-openai==0.1.23
+openai
+email-validator
+python-dotenv
+firebase-admin
+python-multipart
