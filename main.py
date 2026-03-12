@@ -34,11 +34,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # --- Inicialización de Firebase Admin ---
 if not firebase_admin._apps:
-    # Si tienes un JSON de credenciales de servicio, puedes usar:
-    # cred = credentials.Certificate(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
-    # firebase_admin.initialize_app(cred)
-    # En muchos despliegues (p.ej. Render con variables de entorno de GCP) basta con:
-    firebase_admin.initialize_app()
+    # Render Secret Files: sube el JSON y léelo desde /etc/secrets/<filename>
+    # Puedes sobreescribir la ruta con FIREBASE_CREDENTIALS_PATH.
+    cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH", "/etc/secrets/firebase-credentials.json")
+    if os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+    else:
+        # Fallback: intenta inicializar con credenciales por defecto del entorno (GCP/ADC).
+        firebase_admin.initialize_app()
 
 # --- Configuración de la Base de Datos (SQLite en archivo) ---
 DATABASE_URL = "sqlite:///./medical_directory.db"
