@@ -44,11 +44,15 @@ if not firebase_admin._apps:
         # Fallback: intenta inicializar con credenciales por defecto del entorno (GCP/ADC).
         firebase_admin.initialize_app()
 
-# --- Configuración de la Base de Datos (SQLite en archivo) ---
-DATABASE_URL = "sqlite:///./medical_directory.db"
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# --- Configuración de la Base de Datos ---
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./medical_directory.db")
+
+# Neon/PostgreSQL requiere psycopg2, SQLite requiere check_same_thread
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -302,23 +306,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    if os.path.exists("./medical_directory.db"):
-        os.remove("./medical_directory.db")
+    # Solo crea las tablas si no existen — NO borra datos existentes
     Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    # Crear usuario administrador
-    create_user(db, UserCreate(email="admin@example.com", password="adminpassword", role=UserRole.admin))
-    # Crear un usuario doctor
-    doctor_user = create_user(db, UserCreate(email="doctor@example.com", password="doctorpassword", role=UserRole.doctor))
-    # Crear un perfil profesional y vincularlo al usuario doctor
-    create_professional(db, ProfessionalCreate(
-        full_name="Dr. Alan Grant",
-        specialty="Paleontology",
-        gender="Male",
-        location="Montana, USA",
-        user_id=doctor_user.id
-    ))
-    db.close()
 
 # --- Endpoints ---
 @app.post("/token", response_model=Token, tags=["Authentication"])
