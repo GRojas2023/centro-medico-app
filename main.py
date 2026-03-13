@@ -286,8 +286,9 @@ app = FastAPI(title="MediSearch API", description="API para un directorio de pro
 
 
 origins = [
-    "http://localhost:3000",
-    # El puerto 3000 es el que usa React por defecto
+    "http://localhost:3000",        # Desarrollo local
+    "https://centro-medico-con-fastapi.web.app",  # Firebase Hosting (producción)
+    "https://centro-medico-con-fastapi.firebaseapp.com",  # Firebase Hosting (alternativo)
 ]
 
 app.add_middleware(
