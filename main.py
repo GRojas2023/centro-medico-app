@@ -21,28 +21,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, Field, ConfigDict
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-import firebase_admin
-from firebase_admin import credentials, auth as firebase_auth
-
 # --- Configuración de Seguridad ---
-SECRET_KEY = "un-secreto-muy-seguro-y-dificil-de-adivinar"  # En producción, usar una variable de entorno
+SECRET_KEY = os.environ.get("SECRET_KEY", "un-secreto-muy-seguro-y-dificil-de-adivinar")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# --- Inicialización de Firebase Admin ---
-if not firebase_admin._apps:
-    # Render Secret Files: sube el JSON y léelo desde /etc/secrets/<filename>
-    # Puedes sobreescribir la ruta con FIREBASE_CREDENTIALS_PATH.
-    cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH", "/etc/secrets/firebase-credentials.json")
-    if os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-    else:
-        # Fallback: intenta inicializar con credenciales por defecto del entorno (GCP/ADC).
-        firebase_admin.initialize_app()
 
 # --- Configuración de la Base de Datos (SQLite en archivo) ---
 DATABASE_URL = "sqlite:///./medical_directory.db"
@@ -211,17 +196,15 @@ def create_user(db: Session, user: UserCreate):
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Token de Firebase inválido o expirado",
+        detail="Token inválido o expirado",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        decoded_token = firebase_auth.verify_id_token(token)
-        email = decoded_token.get("email")
-        if not email:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
             raise credentials_exception
-    except Exception as e:
-        # Log para depuración; en producción podrías usar logging en lugar de print
-        print(f"Error validando token de Firebase: {e}")
+    except JWTError:
         raise credentials_exception
 
     user = get_user_by_email(db, email=email)
