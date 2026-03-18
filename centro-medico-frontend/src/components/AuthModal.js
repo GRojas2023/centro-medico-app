@@ -41,11 +41,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 onLoginSuccess(token);
                 onClose();
             } else {
-                // Registro: crea usuario como paciente en POST /users/
-                await registerUser({ email, password, role: 'patient' });
-                // Luego login automático
-                const data = await loginUser(email, password);
-                const token = data.access_token;
+                // Registro: crea usuario como paciente en /auth/register
+                const regData = await registerUser({ email, password });
+                const token = regData.access_token;
                 localStorage.setItem('token', token);
                 onLoginSuccess(token);
                 onClose();
