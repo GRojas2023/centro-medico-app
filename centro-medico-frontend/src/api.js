@@ -16,7 +16,7 @@ export const loginUser = async (email, password) => {
         .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(details[key]))
         .join("&");
 
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/token`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formBody,
@@ -27,13 +27,14 @@ export const loginUser = async (email, password) => {
         throw new Error(errorData.detail || "Error al iniciar sesión");
     }
 
-    return response.json();
+    return response.json(); // { access_token, token_type }
 };
 
 export const registerUser = async (patientData) => {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    // patientData debe incluir { email, password, role }
+    const response = await fetch(`${API_URL}/users/`, {
         method: "POST",
-        headers: getHeaders("application/json"),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patientData),
     });
 
@@ -46,7 +47,7 @@ export const registerUser = async (patientData) => {
 };
 
 export const fetchCurrentUser = async () => {
-    const response = await fetch(`${API_URL}/users/me`, {
+    const response = await fetch(`${API_URL}/users/me/`, {
         headers: getHeaders(),
     });
     if (!response.ok) throw new Error("Sesión inválida");
