@@ -44,15 +44,11 @@ if not firebase_admin._apps:
         # Fallback: intenta inicializar con credenciales por defecto del entorno (GCP/ADC).
         firebase_admin.initialize_app()
 
-# --- Configuración de la Base de Datos ---
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./medical_directory.db")
-
-# Neon/PostgreSQL requiere psycopg2, SQLite requiere check_same_thread
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
-
+# --- Configuración de la Base de Datos (SQLite en archivo) ---
+DATABASE_URL = "sqlite:///./medical_directory.db"
+engine = create_engine(
+    DATABASE_URL, connect_args={"check_same_thread": False}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -290,9 +286,10 @@ app = FastAPI(title="MediSearch API", description="API para un directorio de pro
 
 
 origins = [
-    "http://localhost:3000",        # Desarrollo local
-    "https://centro-medico-con-fastapi.web.app",  # Firebase Hosting (producción)
-    "https://centro-medico-con-fastapi.firebaseapp.com",  # Firebase Hosting (alternativo)
+    "http://localhost:3000",      # Desarrollo local React
+    "http://localhost:5173",      # Desarrollo local Vite
+    "https://centro-medico-app.vercel.app",   # Producción en Vercel
+    "https://centro-medico-app-git-main-guty.vercel.app",  # Previews Vercel
 ]
 
 app.add_middleware(
@@ -304,10 +301,20 @@ app.add_middleware(
 )
 
 
+
 @app.on_event("startup")
 def on_startup():
-    # Solo crea las tablas si no existen — NO borra datos existentes
+    # Crear tablas si no existen (idempotente, no borra datos existentes)
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        # Solo crear el admin si no existe aún
+        if not get_user_by_email(db, "admin@example.com"):
+            create_user(db, UserCreate(email="admin@example.com", password="adminpassword", role=UserRole.admin))
+    finally:
+        db.close()
+
+
 
 # --- Endpoints ---
 @app.post("/token", response_model=Token, tags=["Authentication"])
