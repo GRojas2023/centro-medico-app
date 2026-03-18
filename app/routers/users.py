@@ -7,7 +7,7 @@ from typing import List
 from app.database import get_session
 from app.models import User, UserCreate, UserRole, MedicProfile, MedicProfileUpdate, PharmacyUpdate, UserRead, PatientProfile
 from app.deps import get_current_user, get_current_admin_user
-from firebase_admin import auth as firebase_auth
+from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -48,19 +48,9 @@ def create_user(
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user in Firebase Auth so they can log in
-    try:
-        firebase_auth.create_user(
-            email=user_in.email,
-            password=user_in.password
-        )
-    except Exception as e:
-        # Ignore if user already exists in Firebase, just link them in DB
-        print(f"Firebase warning: {e}")
-
     user = User(
         email=user_in.email,
-        password_hash="FIREBASE_MANAGED",
+        password_hash=get_password_hash(user_in.password),
         role=user_in.role,
         location_id=user_in.location_id
     )
