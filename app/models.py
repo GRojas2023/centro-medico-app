@@ -57,6 +57,8 @@ class User(SQLModel, table=True):
 class MedicProfile(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True)
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     specialty: str = Field(index=True)
     license_number: str
     bio: Optional[str] = None
@@ -64,6 +66,10 @@ class MedicProfile(SQLModel, table=True):
     
     # Advanced Schedule Config
     address: Optional[str] = None
+    phone: Optional[str] = None
+    locality: Optional[str] = None
+    province: Optional[str] = None
+    organization: Optional[str] = Field(default="Particular")
     start_time: str = Field(default="09:00")
     end_time: str = Field(default="17:00")
     slot_duration: int = Field(default=30) # in minutes
@@ -95,10 +101,16 @@ class WorkShiftCreate(SQLModel):
     day_of_week: Optional[str] = None
 
 class MedicProfileUpdate(SQLModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     specialty: Optional[str] = None
     license_number: Optional[str] = None
     bio: Optional[str] = None
     address: Optional[str] = None
+    phone: Optional[str] = None
+    locality: Optional[str] = None
+    province: Optional[str] = None
+    organization: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     slot_duration: Optional[int] = None
@@ -217,11 +229,17 @@ class AIRecommendationRequest(SQLModel):
 class MedicProfileRead(SQLModel):
     id: int
     user_id: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     specialty: str
     license_number: str
     bio: Optional[str] = None
     verification_status: bool
     address: Optional[str] = None
+    phone: Optional[str] = None
+    locality: Optional[str] = None
+    province: Optional[str] = None
+    organization: Optional[str] = None
     start_time: str
     end_time: str
     slot_duration: int

@@ -142,6 +142,18 @@ export const adminCreateUser = async (userData) => {
     return response.json();
 };
 
+export const adminCreateMedic = async ({ email, password, profileData }) => {
+    const user = await adminCreateUser({
+        email,
+        password,
+        role: 'medic',
+        location_id: 1,
+    });
+
+    await adminUpdateMedicProfile(user.id, profileData);
+    return user;
+};
+
 export const adminDeleteUser = async (id) => {
     const response = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",
