@@ -23,7 +23,14 @@ def login(
 ):
     """Inicio de sesión con email y contraseña. Devuelve un JWT propio."""
     user = session.exec(select(User).where(User.email == form_data.username)).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
+    password_ok = False
+    if user:
+        try:
+            password_ok = verify_password(form_data.password, user.password_hash)
+        except Exception:
+            password_ok = False
+
+    if not user or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos",
