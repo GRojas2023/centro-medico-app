@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from typing import List
 from sqlalchemy.orm import selectinload
 from app.database import get_session
-from app.models import User, UserCreate, UserRole, MedicProfile, MedicProfileUpdate, PharmacyUpdate, UserRead, PatientProfile
+from app.models import User, UserCreate, UserRole, MedicProfile, MedicProfileUpdate, PharmacyUpdate, UserRead, PatientProfile, Location
 from app.deps import get_current_user, get_current_admin_user
 from app.core.security import get_password_hash
 
@@ -58,12 +58,18 @@ def create_user(
     user = session.exec(select(User).where(User.email == user_in.email)).first()
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    location_id = user_in.location_id
+    if location_id is not None:
+        location = session.get(Location, location_id)
+        if not location:
+            location_id = None
     
     user = User(
         email=user_in.email,
         password_hash=get_password_hash(user_in.password),
         role=user_in.role,
-        location_id=user_in.location_id
+        location_id=location_id
     )
     session.add(user)
     session.commit()

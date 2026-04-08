@@ -142,7 +142,7 @@ export default function AdminDashboard() {
     const handleCreateUser = async (e, role) => {
         e.preventDefault();
         try {
-            await adminCreateUser({ ...newUser, role, location_id: 1 });
+            await adminCreateUser({ ...newUser, role, location_id: null });
             closeCreateForm();
             loadData();
             alert(`${role === 'medic' ? 'Médico' : 'Farmacia'} creado con éxito`);
