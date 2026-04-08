@@ -4,6 +4,7 @@ import os
 import uuid
 from sqlmodel import Session, select
 from typing import List
+from sqlalchemy.orm import selectinload
 from app.database import get_session
 from app.models import User, UserCreate, UserRole, MedicProfile, MedicProfileUpdate, PharmacyUpdate, UserRead, PatientProfile
 from app.deps import get_current_user, get_current_admin_user
@@ -11,14 +12,24 @@ from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+
+def get_user_with_relationships(session: Session, user_id: int):
+    return session.exec(
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            selectinload(User.medic_profile).selectinload(MedicProfile.shifts),
+            selectinload(User.pharmacy_profile),
+            selectinload(User.patient_profile),
+        )
+    ).first()
+
 @router.get("/me", response_model=UserRead)
 def read_users_me(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Eager load patient profile
-    from sqlalchemy.orm import selectinload
-    user = session.exec(select(User).where(User.id == current_user.id).options(selectinload(User.patient_profile))).first()
+    user = get_user_with_relationships(session, current_user.id)
     return user
 
 @router.get("/", response_model=List[UserRead])
@@ -29,16 +40,16 @@ def read_users(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_admin_user)
 ):
-    from sqlalchemy.orm import selectinload
     query = select(User).options(
         selectinload(User.medic_profile).selectinload(MedicProfile.shifts), 
-        selectinload(User.pharmacy_profile)
+        selectinload(User.pharmacy_profile),
+        selectinload(User.patient_profile),
     )
     if role:
         query = query.where(User.role == role)
     return session.exec(query.offset(skip).limit(limit)).all()
 
-@router.post("/", response_model=User)
+@router.post("/", response_model=UserRead)
 def create_user(
     user_in: UserCreate, 
     session: Session = Depends(get_session),
@@ -81,7 +92,7 @@ def create_user(
         session.add(profile)
         session.commit()
 
-    return user
+    return get_user_with_relationships(session, user.id)
 
 @router.delete("/{user_id}")
 def delete_user(
@@ -101,7 +112,7 @@ def delete_user(
     session.commit()
     return {"ok": True}
 
-@router.patch("/medic/{medic_id}/profile", response_model=User)
+@router.patch("/medic/{medic_id}/profile", response_model=UserRead)
 def update_medic_profile(
     medic_id: int,
     profile_in: MedicProfileUpdate,
@@ -144,10 +155,9 @@ def update_medic_profile(
         
     session.add(profile)
     session.commit()
-    session.refresh(user)
-    return user
+    return get_user_with_relationships(session, user.id)
 
-@router.patch("/pharmacy/{pharmacy_id}/profile", response_model=User)
+@router.patch("/pharmacy/{pharmacy_id}/profile", response_model=UserRead)
 def update_pharmacy_profile(
     pharmacy_id: int,
     profile_in: PharmacyUpdate,
@@ -170,8 +180,7 @@ def update_pharmacy_profile(
         
     session.add(profile)
     session.commit()
-    session.refresh(user)
-    return user
+    return get_user_with_relationships(session, user.id)
 @router.get("/patient-lookup", response_model=PatientProfile)
 def lookup_patient(
     dni: str,
@@ -209,7 +218,7 @@ async def upload_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
 
-@router.patch("/me/medic-profile", response_model=User)
+@router.patch("/me/medic-profile", response_model=UserRead)
 def update_my_medic_profile(
     profile_in: MedicProfileUpdate,
     session: Session = Depends(get_session),
@@ -255,5 +264,4 @@ def update_my_medic_profile(
         
     session.add(profile)
     session.commit()
-    session.refresh(current_user)
-    return current_user
+    return get_user_with_relationships(session, current_user.id)
