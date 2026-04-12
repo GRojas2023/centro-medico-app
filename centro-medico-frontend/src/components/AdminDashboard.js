@@ -142,7 +142,7 @@ export default function AdminDashboard() {
     const handleCreateUser = async (e, role) => {
         e.preventDefault();
         try {
-            await adminCreateUser({ ...newUser, role, location_id: 1 });
+            await adminCreateUser({ ...newUser, role, location_id: null });
             closeCreateForm();
             loadData();
             alert(`${role === 'medic' ? 'Médico' : 'Farmacia'} creado con éxito`);
@@ -433,11 +433,11 @@ export default function AdminDashboard() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Correo electrónico</label>
-                                <input type="email" className="w-full border p-3 rounded-lg" value={newMedicForm.email} onChange={(e) => updateNewMedicField('email', e.target.value)} required />
+                                <input type="email" autoComplete="email" className="w-full border p-3 rounded-lg" value={newMedicForm.email} onChange={(e) => updateNewMedicField('email', e.target.value)} required />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña temporal</label>
-                                <input type="password" className="w-full border p-3 rounded-lg" value={newMedicForm.password} onChange={(e) => updateNewMedicField('password', e.target.value)} required />
+                                <input type="password" autoComplete="new-password" className="w-full border p-3 rounded-lg" value={newMedicForm.password} onChange={(e) => updateNewMedicField('password', e.target.value)} required />
                             </div>
                         </div>
                     </section>
