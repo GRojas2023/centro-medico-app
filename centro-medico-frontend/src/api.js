@@ -147,7 +147,7 @@ export const adminCreateMedic = async ({ email, password, profileData }) => {
         email,
         password,
         role: 'medic',
-        location_id: 1,
+        location_id: null,
     });
 
     await adminUpdateMedicProfile(user.id, profileData);
